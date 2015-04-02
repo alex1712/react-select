@@ -15,7 +15,6 @@
     "react-input-autosize": "^0.4.2"
   },
   "devDependencies": {
-    "react": "^0.13.1",
     "babel-eslint": "^2.0.2",
     "babel-jest": "^4.0.0",
     "eslint": "^0.17.1",
@@ -26,7 +25,6 @@
   },
   "browserify-shim": {
     "classnames": "global:classNames",
-    "react": "global:React",
     "react-input-autosize": "global:AutosizeInput",
     "lodash": "global:_"
   },
