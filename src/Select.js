@@ -231,7 +231,6 @@ var Select = React.createClass({
 	},
 
 	selectValue: function(value) {
-		console.log("selecting value");
 		if (!this.props.multi) {
 			this.setValue(value);
 		} else if (value) {
