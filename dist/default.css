@@ -51,6 +51,7 @@
   position: absolute;
   top: 0;
   left: 0;
+  right: -15px;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -161,7 +162,8 @@
   background-color: #f2f9fc;
   color: #333333;
 }
-.Select-noresults, .Select-option.placeholder {
+.Select-noresults,
+.Select-option.placeholder {
   box-sizing: border-box;
   color: #999999;
   cursor: default;
