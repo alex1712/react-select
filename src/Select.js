@@ -36,7 +36,7 @@ var Select = React.createClass({
 		matchProp: React.PropTypes.string,         // (any|label|value) which option property to filter on
 		inputProps: React.PropTypes.object,        // custom attributes for the Input (in the Select-control) e.g: {'data-foo': 'bar'}
 		tagging: React.PropTypes.bool,             // whether a new option can be created by giving a name
-		taggingPlaceholder: React.PropTypes.string,        // text to be displayed after the new option
+		taggingPlaceholder: React.PropTypes.string,// text to be displayed after the new option
 
 		/*
 		* Allow user to make option label clickable. When this handler is defined we should
@@ -95,7 +95,6 @@ var Select = React.createClass({
 	},
 
 	componentWillMount: function() {
-		console.log("mounting this shit!");
 		this._optionsCache = {};
 		this._optionsFilterString = '';
 		this.setState(this.getStateFromValue(this.props.value));
@@ -584,7 +583,7 @@ var Select = React.createClass({
 	addCreateOption: function(options, input) {
 		options = _.cloneDeep(options);
 		if (this.props.tagging && input && !_.findWhere(options, {'label': input})) {
-			options.push({
+			options.unshift({
 				'value': input,
 				'label': input + ' ' + this.props.taggingPlaceholder
 			});
