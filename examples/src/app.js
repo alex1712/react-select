@@ -119,12 +119,12 @@ var RemoteSelectField = React.createClass({
 var MultiSelectField = React.createClass({
 	render: function() {
 		var ops = [
-			{ label: 'Chocolate', value: 'chocolate' },
-			{ label: 'Vanilla', value: 'vanilla' },
-			{ label: 'Strawberry', value: 'strawberry' },
-			{ label: 'Caramel', value: 'caramel' },
-			{ label: 'Cookies and Cream', value: 'cookiescream' },
-			{ label: 'Peppermint', value: 'peppermint' }
+			{ label: 'chocolate', value: 'chocolate' },
+			{ label: 'vanilla', value: 'vanilla' },
+			{ label: 'strawberry', value: 'strawberry' },
+			{ label: 'caramel', value: 'caramel' },
+			{ label: 'cookiescream', value: 'cookiescream' },
+			{ label: 'peppermint', value: 'peppermint' }
 		];
 		return <div>
 			<label>{this.props.label}</label>

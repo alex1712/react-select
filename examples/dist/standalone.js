@@ -5,7 +5,7 @@
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _ = (typeof window !== "undefined" ? window._ : typeof global !== "undefined" ? global._ : null),
-    React = (typeof window !== "undefined" ? window.React : typeof global !== "undefined" ? global.React : null),
+    React = require("react"),
     Input = (typeof window !== "undefined" ? window.AutosizeInput : typeof global !== "undefined" ? global.AutosizeInput : null),
     classes = (typeof window !== "undefined" ? window.classNames : typeof global !== "undefined" ? global.classNames : null),
     Value = require("./Value");
@@ -41,6 +41,8 @@ var Select = React.createClass({
 		matchPos: React.PropTypes.string, // (any|start) match the start or entire string when filtering
 		matchProp: React.PropTypes.string, // (any|label|value) which option property to filter on
 		inputProps: React.PropTypes.object, // custom attributes for the Input (in the Select-control) e.g: {'data-foo': 'bar'}
+		tagging: React.PropTypes.bool, // whether a new option can be created by giving a name
+		taggingPlaceholder: React.PropTypes.func, // returns the text to be displayed after the new option
 
 		/*
   * Allow user to make option label clickable. When this handler is defined we should
@@ -73,7 +75,10 @@ var Select = React.createClass({
 			matchPos: "any",
 			matchProp: "any",
 			inputProps: {},
-
+			tagging: false,
+			taggingPlaceholder: function taggingPlaceholder(currentValue) {
+				return "Press enter or click to create '" + currentValue + "' as a new tag...";
+			},
 			onOptionLabelClick: undefined
 		};
 	},
@@ -207,7 +212,7 @@ var Select = React.createClass({
 			inputValue: "",
 			filteredOptions: filteredOptions,
 			placeholder: !this.props.multi && values.length ? values[0].label : this.props.placeholder,
-			focusedOption: !this.props.multi && values.length ? values[0] : filteredOptions[0]
+			focusedOption: !this.props.multi && values.length ? values[0] : this.getAutomaticFocusedOption(filteredOptions, "")
 		};
 	},
 
@@ -234,6 +239,7 @@ var Select = React.createClass({
 	},
 
 	selectValue: function selectValue(value) {
+		console.log("selecting value");
 		if (!this.props.multi) {
 			this.setValue(value);
 		} else if (value) {
@@ -276,6 +282,14 @@ var Select = React.createClass({
 		if (newState.value !== this.state.value && this.props.onChange) {
 			this.props.onChange(newState.value, newState.values);
 		}
+	},
+
+	getNewTagOption: function getNewTagOption() {
+		return this.props.tagging ? {
+			label: this.props.taggingPlaceholder(this.state.inputValue),
+			value: null,
+			type: "createTag"
+		} : null;
 	},
 
 	handleMouseDown: function handleMouseDown(event) {
@@ -396,12 +410,30 @@ var Select = React.createClass({
 			}, this._bindCloseMenuIfClickedOutside);
 		} else {
 			var filteredOptions = this.filterOptions(this.state.options);
+
 			this.setState({
 				isOpen: true,
 				inputValue: event.target.value,
 				filteredOptions: filteredOptions,
-				focusedOption: _.contains(filteredOptions, this.state.focusedOption) ? this.state.focusedOption : filteredOptions[0]
+				focusedOption: this.getAutomaticFocusedOption(filteredOptions, event.target.value)
 			}, this._bindCloseMenuIfClickedOutside);
+		}
+	},
+
+	createAsNewTag: function createAsNewTag() {
+		this.addValue(this.state.inputValue);
+	},
+
+	getAutomaticFocusedOption: function getAutomaticFocusedOption(options, currentInput) {
+		var input = currentInput || this.state.inputValue;
+		if (this.props.tagging) {
+			if (options && options.length && (_.isEmpty(input) || input === options[0].label)) {
+				return options[0];
+			} else {
+				return null;
+			}
+		} else {
+			return options ? options[0] : null;
 		}
 	},
 
@@ -421,7 +453,7 @@ var Select = React.createClass({
 				this.setState(_.extend({
 					options: options,
 					filteredOptions: filteredOptions,
-					focusedOption: _.contains(filteredOptions, this.state.focusedOption) ? this.state.focusedOption : filteredOptions[0]
+					focusedOption: _.contains(filteredOptions, this.state.focusedOption) ? this.state.focusedOption : this.getAutomaticFocusedOption(filteredOptions, input)
 				}, state));
 				return;
 			}
@@ -441,7 +473,7 @@ var Select = React.createClass({
 			this.setState(_.extend({
 				options: data.options,
 				filteredOptions: filteredOptions,
-				focusedOption: _.contains(filteredOptions, this.state.focusedOption) ? this.state.focusedOption : filteredOptions[0]
+				focusedOption: _.contains(filteredOptions, this.state.focusedOption) ? this.state.focusedOption : this.getAutomaticFocusedOption(filteredOptions, input)
 			}, state));
 		}).bind(this));
 	},
@@ -472,7 +504,13 @@ var Select = React.createClass({
 	},
 
 	selectFocusedOption: function selectFocusedOption() {
-		return this.selectValue(this.state.focusedOption);
+		if (!this.state.isOpen) {
+			return;
+		}if (this.props.tagging && !this.state.focusedOption && !_.isEmpty(this.state.inputValue)) {
+			return this.createAsNewTag();
+		} else {
+			return this.selectValue(this.state.focusedOption);
+		}
 	},
 
 	focusOption: function focusOption(op) {
@@ -542,10 +580,13 @@ var Select = React.createClass({
 	},
 
 	buildMenu: function buildMenu() {
+		var _this = this;
+
 		var focusedValue = this.state.focusedOption ? this.state.focusedOption.value : null;
 
-		if (this.state.filteredOptions.length > 0) {
-			focusedValue = focusedValue == null ? this.state.filteredOptions[0] : focusedValue;
+		if (this.state.filteredOptions.length > 0 && focusedValue == null) {
+			var focusedOption = this.getAutomaticFocusedOption(this.state.filteredOptions);
+			focusedValue = focusedOption ? focusedOption.value : null;
 		}
 
 		var ops = _.map(this.state.filteredOptions, function (op) {
@@ -568,6 +609,25 @@ var Select = React.createClass({
 				op.label
 			);
 		}, this);
+
+		var taggingOption = this.getNewTagOption();
+		var isTagAlreadyAnOption = this.state.filteredOptions.some(function (op) {
+			return op.value === _this.state.inputValue;
+		});
+
+		if (taggingOption && !isTagAlreadyAnOption && !_.isEmpty(this.state.inputValue)) {
+			var optionClass = classes({
+				"Select-option": true,
+				placeholder: true,
+				"is-focused": !this.state.focusedOption
+			});
+			var mouseDown = this.createAsNewTag;
+			ops.unshift(React.createElement(
+				"div",
+				{ ref: null, key: "new-tag", onMouseDown: mouseDown, className: optionClass },
+				taggingOption.label
+			));
+		}
 
 		return ops.length ? ops : React.createElement(
 			"div",
@@ -682,11 +742,10 @@ var Select = React.createClass({
 module.exports = Select;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./Value":2}],2:[function(require,module,exports){
-(function (global){
+},{"./Value":2,"react":undefined}],2:[function(require,module,exports){
 "use strict";
 
-var React = (typeof window !== "undefined" ? window.React : typeof global !== "undefined" ? global.React : null);
+var React = require("react");
 
 var Option = React.createClass({
 
@@ -737,6 +796,5 @@ var Option = React.createClass({
 
 module.exports = Option;
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}]},{},[1])(1)
+},{"react":undefined}]},{},[1])(1)
 });
