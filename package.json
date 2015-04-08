@@ -1,6 +1,6 @@
 {
   "name": "react-select",
-  "version": "0.4.11",
+  "version": "0.4.12",
   "description": "A Select control built with and for ReactJS",
   "main": "lib/Select.js",
   "author": "Jed Watson",
@@ -27,9 +27,6 @@
     "classnames": "global:classNames",
     "react-input-autosize": "global:AutosizeInput",
     "lodash": "global:_"
-  },
-  "peerDependencies": {
-    "react": "0.13.x"
   },
   "scripts": {
     "test": "jest; true",
