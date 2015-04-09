@@ -1,5 +1,5 @@
 var _ = require('lodash'),
-	React = require('react'),
+	React = require('react/addons'),
 	Input = require('react-input-autosize'),
 	classes = require('classnames'),
 	Value = require('./Value');
