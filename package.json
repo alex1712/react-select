@@ -12,7 +12,7 @@
   "dependencies": {
     "classnames": "^1.2.0",
     "lodash": "^3.5.0",
-    "react-input-autosize": "^0.4.2"
+    "react-input-autosize": "git://github.com/alex1712/react-input-autosize.git#react-peer-dependency"
   },
   "devDependencies": {
     "babel-eslint": "^2.0.2",
