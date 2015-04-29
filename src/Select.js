@@ -35,6 +35,8 @@ var Select = React.createClass({
 		matchPos: React.PropTypes.string,          // (any|start) match the start or entire string when filtering
 		matchProp: React.PropTypes.string,         // (any|label|value) which option property to filter on
 		inputProps: React.PropTypes.object,        // custom attributes for the Input (in the Select-control) e.g: {'data-foo': 'bar'}
+		tagging: React.PropTypes.bool,             // whether a new option can be created by giving a name
+		taggingPlaceholder: React.PropTypes.func,  // returns the text to be displayed after the new option
 
 		/*
 		* Allow user to make option label clickable. When this handler is defined we should
@@ -67,7 +69,10 @@ var Select = React.createClass({
 			matchPos: 'any',
 			matchProp: 'any',
 			inputProps: {},
-
+			tagging: false,
+			taggingPlaceholder: function(currentValue) {
+				return 'Press enter or click to create \'' + currentValue + '\' as a new tag...'
+			},
 			onOptionLabelClick: undefined
 		};
 	},
@@ -199,7 +204,7 @@ var Select = React.createClass({
 			inputValue: '',
 			filteredOptions: filteredOptions,
 			placeholder: !this.props.multi && values.length ? values[0].label : this.props.placeholder,
-			focusedOption: !this.props.multi && values.length ? values[0] : filteredOptions[0]
+			focusedOption: !this.props.multi && values.length ? values[0] : this.getAutomaticFocusedOption(filteredOptions, '')
 		};
 	},
 
@@ -268,6 +273,14 @@ var Select = React.createClass({
 		if (newState.value !== this.state.value && this.props.onChange) {
 			this.props.onChange(newState.value, newState.values);
 		}
+	},
+	
+	getNewTagOption: function() {
+		return this.props.tagging ? {
+			label: this.props.taggingPlaceholder(this.state.inputValue),
+			value: null,
+			type: 'createTag'
+		} : null;
 	},
 
 	handleMouseDown: function(event) {
@@ -382,19 +395,37 @@ var Select = React.createClass({
 			}, this._bindCloseMenuIfClickedOutside);
 		} else {
 			var filteredOptions = this.filterOptions(this.state.options);
+
 			this.setState({
 				isOpen: true,
 				inputValue: event.target.value,
 				filteredOptions: filteredOptions,
-				focusedOption: _.contains(filteredOptions, this.state.focusedOption) ? this.state.focusedOption : filteredOptions[0]
+				focusedOption: this.getAutomaticFocusedOption(filteredOptions, event.target.value)
 			}, this._bindCloseMenuIfClickedOutside);
+		}
+	},
+
+	createAsNewTag: function() {
+		this.addValue(this.state.inputValue);
+	},
+	
+	getAutomaticFocusedOption: function(options, currentInput) {
+		var input = currentInput || this.state.inputValue;
+		if (this.props.tagging) {
+			if(options && options.length && (_.isEmpty(input) ||  input === options[0].label)) {
+				return options[0];
+			} else {
+				return null;
+			}
+		} else {
+			return options ? options[0] : null;
 		}
 	},
 
 	autoloadAsyncOptions: function() {
 		this.loadAsyncOptions('', {}, function() {});
 	},
-
+	
 	loadAsyncOptions: function(input, state) {
 		var thisRequestId = this._currentRequestId = requestId++;
 
@@ -407,7 +438,7 @@ var Select = React.createClass({
 				this.setState(_.extend({
 					options: options,
 					filteredOptions: filteredOptions,
-					focusedOption: _.contains(filteredOptions, this.state.focusedOption) ? this.state.focusedOption : filteredOptions[0]
+					focusedOption: _.contains(filteredOptions, this.state.focusedOption) ? this.state.focusedOption : this.getAutomaticFocusedOption(filteredOptions, input)
 				}, state));
 				return;
 			}
@@ -427,7 +458,7 @@ var Select = React.createClass({
 			this.setState(_.extend({
 				options: data.options,
 				filteredOptions: filteredOptions,
-				focusedOption: _.contains(filteredOptions, this.state.focusedOption) ? this.state.focusedOption : filteredOptions[0]
+				focusedOption: _.contains(filteredOptions, this.state.focusedOption) ? this.state.focusedOption : this.getAutomaticFocusedOption(filteredOptions, input)
 			}, state));
 
 		}.bind(this));
@@ -462,7 +493,12 @@ var Select = React.createClass({
 	},
 
 	selectFocusedOption: function() {
-		return this.selectValue(this.state.focusedOption);
+		if (!this.state.isOpen) return;
+		if (this.props.tagging && !this.state.focusedOption && !_.isEmpty(this.state.inputValue)) {
+			return this.createAsNewTag();
+		} else {
+			return this.selectValue(this.state.focusedOption);
+		}
 	},
 
 	focusOption: function(op) {
@@ -535,8 +571,9 @@ var Select = React.createClass({
 	buildMenu: function() {
 		var focusedValue = this.state.focusedOption ? this.state.focusedOption.value : null;
 
-		if(this.state.filteredOptions.length > 0) {
-			focusedValue = focusedValue == null ? this.state.filteredOptions[0] : focusedValue;
+		if(this.state.filteredOptions.length > 0 && focusedValue == null) {
+			var focusedOption = this.getAutomaticFocusedOption(this.state.filteredOptions);
+			focusedValue = focusedOption ? focusedOption.value : null;
 		}
 
 		var ops = _.map(this.state.filteredOptions, function(op) {
@@ -553,9 +590,23 @@ var Select = React.createClass({
 				mouseLeave = this.unfocusOption.bind(this, op),
 				mouseDown = this.selectValue.bind(this, op);
 
-			return <div ref={ref} key={'option-' + op.value} className={optionClass} onMouseEnter={mouseEnter} onMouseLeave={mouseLeave} onMouseDown={mouseDown} onClick={mouseDown}>{op.label}</div>;
-
+			return (
+				<div ref={ref} key={'option-' + op.value} className={optionClass} onMouseEnter={mouseEnter} onMouseLeave={mouseLeave} onMouseDown={mouseDown} onClick={mouseDown}>{op.label}</div>
+			);
 		}, this);
+		
+		var taggingOption = this.getNewTagOption();
+		var isTagAlreadyAnOption = this.state.filteredOptions.some(op => op.value === this.state.inputValue);
+		
+		if(taggingOption && !isTagAlreadyAnOption && !_.isEmpty(this.state.inputValue)) {
+			var optionClass = classes({
+				'Select-option': true,
+				'placeholder': true,
+				'is-focused': !this.state.focusedOption
+			});
+			var mouseDown = this.createAsNewTag;
+			ops.unshift(<div ref={null} key={'new-tag'} onMouseDown={mouseDown} className={optionClass}>{taggingOption.label}</div>);			
+		}
 
 		return ops.length ? ops : (
 			<div className="Select-noresults">
