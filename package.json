@@ -1,5 +1,5 @@
 {
-  "name": "react-select",
+  "name": "mnq-react-select",
   "version": "0.4.12",
   "description": "A Select control built with and for ReactJS",
   "main": "lib/Select.js",

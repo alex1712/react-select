@@ -4,7 +4,7 @@ These errors can be ignored until the bug has been fixed.
  */
 
 var React = require('react'),
-	Select = require('react-select');
+	Select = require('mnq-react-select');
 
 var STATES = require('./data/states');
 
