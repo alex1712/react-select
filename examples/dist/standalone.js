@@ -7,8 +7,10 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 var _ = (typeof window !== "undefined" ? window._ : typeof global !== "undefined" ? global._ : null),
     React = (typeof window !== "undefined" ? window.React : typeof global !== "undefined" ? global.React : null),
     Input = (typeof window !== "undefined" ? window.AutosizeInput : typeof global !== "undefined" ? global.AutosizeInput : null),
-    classes = (typeof window !== "undefined" ? window.classNames : typeof global !== "undefined" ? global.classNames : null),
-    Value = require('./Value');
+    classes = (typeof window !== "undefined" ? window.classNames : typeof global !== "undefined" ? global.classNames : null);
+
+var Value = require('./Value'),
+    OptionList = require('./OptionList');
 
 var requestId = 0;
 
@@ -578,63 +580,6 @@ var Select = React.createClass({
 		}
 	},
 
-	buildMenu: function buildMenu() {
-		var _this = this;
-
-		var focusedValue = this.state.focusedOption ? this.state.focusedOption.value : null;
-
-		if (this.state.filteredOptions.length > 0 && focusedValue == null) {
-			var focusedOption = this.getAutomaticFocusedOption(this.state.filteredOptions);
-			focusedValue = focusedOption ? focusedOption.value : null;
-		}
-
-		var ops = _.map(this.state.filteredOptions, function (op) {
-			var isFocused = focusedValue === op.value;
-
-			var optionClass = classes({
-				'Select-option': true,
-				'is-focused': isFocused
-			});
-
-			var ref = isFocused ? 'focused' : null;
-
-			var mouseEnter = this.focusOption.bind(this, op),
-			    mouseLeave = this.unfocusOption.bind(this, op),
-			    mouseDown = this.selectValue.bind(this, op);
-
-			return React.createElement(
-				'div',
-				{ ref: ref, key: 'option-' + op.value, className: optionClass, onMouseEnter: mouseEnter, onMouseLeave: mouseLeave, onMouseDown: mouseDown, onClick: mouseDown },
-				op.label
-			);
-		}, this);
-
-		var taggingOption = this.getNewTagOption();
-		var isTagAlreadyAnOption = this.state.filteredOptions.some(function (op) {
-			return op.value === _this.state.inputValue;
-		});
-
-		if (taggingOption && !isTagAlreadyAnOption && !_.isEmpty(this.state.inputValue)) {
-			var optionClass = classes({
-				'Select-option': true,
-				placeholder: true,
-				'is-focused': !this.state.focusedOption
-			});
-			var mouseDown = this.createAsNewTag;
-			ops.unshift(React.createElement(
-				'div',
-				{ ref: null, key: 'new-tag', onMouseDown: mouseDown, className: optionClass },
-				taggingOption.label
-			));
-		}
-
-		return ops.length ? ops : React.createElement(
-			'div',
-			{ className: 'Select-noresults' },
-			this.props.asyncOptions && !this.state.inputValue ? this.props.searchPromptText : this.props.noResultsText
-		);
-	},
-
 	handleOptionLabelClick: function handleOptionLabelClick(value, event) {
 		var handler = this.props.onOptionLabelClick;
 
@@ -695,7 +640,7 @@ var Select = React.createClass({
 				React.createElement(
 					'div',
 					menuProps,
-					this.buildMenu()
+					React.createElement(OptionList, { onChange: this.selectValue, onFocusChange: this.focusOption, options: this.state.filteredOptions })
 				)
 			);
 		}
@@ -741,7 +686,109 @@ var Select = React.createClass({
 module.exports = Select;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./Value":2}],2:[function(require,module,exports){
+},{"./OptionList":3,"./Value":4}],2:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var React = (typeof window !== "undefined" ? window.React : typeof global !== "undefined" ? global.React : null),
+    classes = (typeof window !== "undefined" ? window.classNames : typeof global !== "undefined" ? global.classNames : null);
+
+var Option = React.createClass({
+	displayName: 'Option',
+
+	propTypes: {
+		option: React.PropTypes.object.isRequired, // array of options
+		onFocus: React.PropTypes.func.isRequired,
+		onSelected: React.PropTypes.func.isRequired,
+		isFocus: React.PropTypes.bool.isRequired
+	},
+
+	getDefaultProps: function getDefaultProps() {
+		return {
+			hasFocus: false
+		};
+	},
+	render: function render() {
+		var classNames = classes({
+			'select--option': true,
+			'select--option__is-focused': this.props.hasFocus
+		});
+
+		var mouseEnter = (function () {
+			this.props.onFocus(this.props.option);
+		}).bind(this),
+		    mouseDown = (function () {
+			this.props.onSelected(this.props.option);
+		}).bind(this);
+		return React.createElement(
+			'div',
+			{ className: classNames, key: 'option-' + this.props.option.value,
+				onMouseEnter: mouseEnter, onMouseDown: mouseDown, onClick: mouseDown },
+			this.props.option.label
+		);
+	}
+
+});
+
+module.exports = Option;
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],3:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var React = (typeof window !== "undefined" ? window.React : typeof global !== "undefined" ? global.React : null),
+    classes = (typeof window !== "undefined" ? window.classNames : typeof global !== "undefined" ? global.classNames : null);
+
+var Option = require('./Option');
+
+var OptionList = React.createClass({
+    displayName: 'OptionList',
+
+    propTypes: {
+        options: React.PropTypes.array.isRequired, // array of options
+        onFocusChange: React.PropTypes.func.isRequired,
+        onChange: React.PropTypes.func.isRequired
+    },
+
+    getDefaultProps: function getDefaultProps() {
+        return {
+            hasFocus: false
+        };
+    },
+
+    renderOptions: function renderOptions() {
+        return this.props.options.map((function (op) {
+            //var ref = isFocused ? 'focused' : null;
+            return React.createElement(
+                Option,
+                { option: op, key: 'option-' + op.value,
+                    onFocus: this.props.onFocusChange, onSelected: this.props.onChange },
+                op.label
+            );
+        }).bind(this));
+    },
+
+    render: function render() {
+        var ops = this.renderOptions();
+
+        return ops.length ? React.createElement(
+            'div',
+            { className: 'select--menu' },
+            ops
+        ) : React.createElement(
+            'div',
+            { className: 'select--menu__no-results' },
+            this.props.asyncOptions && !this.state.inputValue ? this.props.searchPromptText : this.props.noResultsText
+        );
+    }
+
+});
+
+module.exports = OptionList;
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./Option":2}],4:[function(require,module,exports){
 (function (global){
 'use strict';
 

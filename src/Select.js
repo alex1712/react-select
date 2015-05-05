@@ -1,8 +1,10 @@
 var _ = require('lodash'),
 	React = require('react'),
 	Input = require('react-input-autosize'),
-	classes = require('classnames'),
-	Value = require('./Value');
+	classes = require('classnames');
+
+var Value = require('./Value'),
+	OptionList = require('./OptionList');
 
 var requestId = 0;
 
@@ -568,53 +570,6 @@ var Select = React.createClass({
 		}
 	},
 
-	buildMenu: function() {
-		var focusedValue = this.state.focusedOption ? this.state.focusedOption.value : null;
-
-		if(this.state.filteredOptions.length > 0 && focusedValue == null) {
-			var focusedOption = this.getAutomaticFocusedOption(this.state.filteredOptions);
-			focusedValue = focusedOption ? focusedOption.value : null;
-		}
-
-		var ops = _.map(this.state.filteredOptions, function(op) {
-			var isFocused = focusedValue === op.value;
-
-			var optionClass = classes({
-				'Select-option': true,
-				'is-focused': isFocused
-			});
-
-			var ref = isFocused ? 'focused' : null;
-
-			var mouseEnter = this.focusOption.bind(this, op),
-				mouseLeave = this.unfocusOption.bind(this, op),
-				mouseDown = this.selectValue.bind(this, op);
-
-			return (
-				<div ref={ref} key={'option-' + op.value} className={optionClass} onMouseEnter={mouseEnter} onMouseLeave={mouseLeave} onMouseDown={mouseDown} onClick={mouseDown}>{op.label}</div>
-			);
-		}, this);
-		
-		var taggingOption = this.getNewTagOption();
-		var isTagAlreadyAnOption = this.state.filteredOptions.some(op => op.value === this.state.inputValue);
-		
-		if(taggingOption && !isTagAlreadyAnOption && !_.isEmpty(this.state.inputValue)) {
-			var optionClass = classes({
-				'Select-option': true,
-				'placeholder': true,
-				'is-focused': !this.state.focusedOption
-			});
-			var mouseDown = this.createAsNewTag;
-			ops.unshift(<div ref={null} key={'new-tag'} onMouseDown={mouseDown} className={optionClass}>{taggingOption.label}</div>);			
-		}
-
-		return ops.length ? ops : (
-			<div className="Select-noresults">
-				{this.props.asyncOptions && !this.state.inputValue ? this.props.searchPromptText : this.props.noResultsText}
-			</div>
-		);
-	},
-
 	handleOptionLabelClick: function (value, event) {
 		var handler = this.props.onOptionLabelClick;
 
@@ -667,7 +622,9 @@ var Select = React.createClass({
 			}
 			menu = (
 				<div ref="selectMenuContainer" className="Select-menu-outer">
-					<div {...menuProps}>{this.buildMenu()}</div>
+					<div {...menuProps}>
+						<OptionList onChange={this.selectValue} onFocusChange={this.focusOption} options={this.state.filteredOptions} />
+					</div>
 				</div>
 			);
 		}
