@@ -7,20 +7,22 @@ var OptionList = React.createClass({
 	propTypes: {
         options         : React.PropTypes.array.isRequired,            // array of options
         onFocusChange   : React.PropTypes.func.isRequired,
-        onChange        : React.PropTypes.func.isRequired
+        onChange        : React.PropTypes.func.isRequired,
+		focusedOption   : React.PropTypes.object
     },
 
     getDefaultProps: function() {
         return {
-            hasFocus        : false
+			focusedOption: {}
         };
     },
-
+	
 	renderOptions: function() {
         return this.props.options.map(function(op) {
-            //var ref = isFocused ? 'focused' : null;
+			var hasFocus = op.value === this.props.focusedOption.value;
+            var ref = hasFocus ? 'focused' : null;
             return (
-                <Option option={op} key={'option-' + op.value}
+                <Option option={op} key={'option-' + op.value} ref={ref} hasFocus={hasFocus}
                      onFocus={this.props.onFocusChange} onSelected={this.props.onChange} >
                     {op.label}
                 </Option>
@@ -29,11 +31,9 @@ var OptionList = React.createClass({
 	},
 
 	render: function() {
-        var ops = this.renderOptions();
-
-		return ops.length ?
+		return this.props.options.length > 0 ?
             <div className="select--menu">
-                {ops}
+                {this.renderOptions()}
             </div> :
             (
                 <div className="select--menu__no-results">

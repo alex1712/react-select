@@ -6,7 +6,7 @@ var Option = React.createClass({
 		option         	: React.PropTypes.object.isRequired,            // array of options
 		onFocus         : React.PropTypes.func.isRequired,
 		onSelected      : React.PropTypes.func.isRequired,
-		isFocus        : React.PropTypes.bool.isRequired
+		hasFocus        : React.PropTypes.bool
 	},
 
 	getDefaultProps: function() {
@@ -14,17 +14,23 @@ var Option = React.createClass({
 			hasFocus: false
 		};
 	},
+	
+	handleMouseEnter: function() {
+		this.props.onFocus(this.props.option)
+	},
+	handleMouseDown: function() {
+		this.props.onSelected(this.props.option)
+	},
+	
 	render: function() {
         var classNames = classes({
             'select--option': true,
             'select--option__is-focused': this.props.hasFocus
         });
 
-        var mouseEnter = function() { this.props.onFocus(this.props.option) }.bind(this),
-			mouseDown = function() { this.props.onSelected(this.props.option) }.bind(this);
 		return (
 			<div className={classNames} key={'option-' + this.props.option.value}
-				 onMouseEnter={mouseEnter} onMouseDown={mouseDown} onClick={mouseDown} >
+				 onMouseEnter={this.handleMouseEnter} onMouseDown={this.handleMouseDown} onClick={this.handleMouseDown} >
 				{this.props.option.label}
 			</div>
 		);

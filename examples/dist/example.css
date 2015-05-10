@@ -115,7 +115,7 @@ label {
 .Select {
   position: relative;
 }
-.Select-control {
+.select--control {
   position: relative;
   overflow: hidden;
   background-color: white;
@@ -129,26 +129,26 @@ label {
   padding: 8px 52px 8px 10px;
   transition: all 200ms ease;
 }
-.Select-control:hover {
+.select--control:hover {
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
 }
-.is-searchable.is-open > .Select-control {
+.is-searchable.is-open > .select--control {
   cursor: text;
 }
-.is-open > .Select-control {
+.is-open > .select--control {
   border-bottom-right-radius: 0;
   border-bottom-left-radius: 0;
   background: white;
   border-color: #b3b3b3 #cccccc #d9d9d9;
 }
-.is-open > .Select-control > .Select-arrow {
+.is-open > .select--control > .select--arrow {
   border-color: transparent transparent #999999;
   border-width: 0 5px 5px;
 }
-.is-searchable.is-focused:not(.is-open) > .Select-control {
+.is-searchable.select--option__is-focused:not(.is-open) > .select--control {
   cursor: text;
 }
-.is-focused:not(.is-open) > .Select-control {
+.select--option__is-focused:not(.is-open) > .select--control {
   border-color: #0088cc #0099e6 #0099e6;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1), 0 0 5px -1px rgba(0, 136, 204, 0.5);
 }
@@ -164,10 +164,10 @@ label {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.has-value > .Select-control > .Select-placeholder {
+.has-value > .select--control > .Select-placeholder {
   color: #333333;
 }
-.Select-input > input {
+.select--input > input {
   cursor: default;
   background: none transparent;
   border: 0 none;
@@ -179,10 +179,10 @@ label {
   display: inline-block;
   -webkit-appearance: none;
 }
-.is-focused .Select-input > input {
+.select--option__is-focused .select--input > input {
   cursor: text;
 }
-.Select-control:not(.is-searchable) > .Select-input {
+.select--control:not(.is-searchable) > .select--input {
   outline: none;
 }
 .Select-loading {
@@ -202,7 +202,7 @@ label {
   right: 30px;
   top: 50%;
 }
-.has-value > .Select-control > .Select-loading {
+.has-value > .select--control > .Select-loading {
   right: 46px;
 }
 .Select-clear {
@@ -221,7 +221,7 @@ label {
 .Select-clear > span {
   font-size: 1.1em;
 }
-.Select-arrow {
+.select--arrow {
   border-color: #999999 transparent transparent;
   border-style: solid;
   border-width: 5px 5px 0;
@@ -234,7 +234,7 @@ label {
   top: 14px;
   width: 0;
 }
-.Select-menu-outer {
+.select--menu--outer {
   border-bottom-right-radius: 4px;
   border-bottom-left-radius: 4px;
   background-color: white;
@@ -250,37 +250,37 @@ label {
   z-index: 1000;
   -webkit-overflow-scrolling: touch;
 }
-.Select-menu {
+.select--menu {
   max-height: 198px;
   overflow-y: auto;
 }
-.Select-option {
+.select--option {
   box-sizing: border-box;
   color: #666666;
   cursor: pointer;
   display: block;
   padding: 8px 10px;
 }
-.Select-option:last-child {
+.select--option:last-child {
   border-bottom-right-radius: 4px;
   border-bottom-left-radius: 4px;
 }
-.Select-option.is-focused {
+.select--option.select--option__is-focused {
   background-color: #f2f9fc;
   color: #333333;
 }
-.Select-noresults,
-.Select-option.placeholder {
+.select--noresults,
+.select--option.placeholder {
   box-sizing: border-box;
   color: #999999;
   cursor: default;
   display: block;
   padding: 8px 10px;
 }
-.Select.is-multi .Select-control {
+.Select.is-multi .select--control {
   padding: 2px 52px 2px 3px;
 }
-.Select.is-multi .Select-input {
+.Select.is-multi .select--input {
   vertical-align: middle;
   border: 1px solid transparent;
   margin: 2px;

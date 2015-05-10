@@ -3,7 +3,7 @@ var _ = require('lodash'),
 	Input = require('react-input-autosize'),
 	classes = require('classnames');
 
-var Value = require('./Value'),
+var Control = require('./Control'),
 	OptionList = require('./OptionList');
 
 var requestId = 0;
@@ -164,8 +164,8 @@ var Select = React.createClass({
 		}
 
 		if (this._focusedOptionReveal) {
-			if (this.refs.focused && this.refs.menu) {
-				var focusedDOM = this.refs.focused.getDOMNode();
+			if (this.refs.menu && this.refs.menu.refs.focused) {
+				var focusedDOM = this.refs.menu.refs.focused.getDOMNode();
 				var menuDOM = this.refs.menu.getDOMNode();
 				var focusedRect = focusedDOM.getBoundingClientRect();
 				var menuRect = menuDOM.getBoundingClientRect();
@@ -267,7 +267,7 @@ var Select = React.createClass({
 	},
 
 	getInputNode: function () {
-		var input = this.refs.input;
+		var input = this.refs.control.refs.input;
 		return this.props.searchable ? input : input.getDOMNode();
 	},
 
@@ -381,17 +381,17 @@ var Select = React.createClass({
 		event.preventDefault();
 	},
 
-	handleInputChange: function(event) {
+	handleInputChange: function(value) {
 		// assign an internal variable because we need to use
 		// the latest value before setState() has completed.
-		this._optionsFilterString = event.target.value;
+		this._optionsFilterString = value;
 
 		if (this.props.asyncOptions) {
 			this.setState({
 				isLoading: true,
-				inputValue: event.target.value
+				inputValue: value
 			});
-			this.loadAsyncOptions(event.target.value, {
+			this.loadAsyncOptions(value, {
 				isLoading: false,
 				isOpen: true
 			}, this._bindCloseMenuIfClickedOutside);
@@ -400,9 +400,9 @@ var Select = React.createClass({
 
 			this.setState({
 				isOpen: true,
-				inputValue: event.target.value,
+				inputValue: value,
 				filteredOptions: filteredOptions,
-				focusedOption: this.getAutomaticFocusedOption(filteredOptions, event.target.value)
+				focusedOption: this.getAutomaticFocusedOption(filteredOptions, value)
 			}, this._bindCloseMenuIfClickedOutside);
 		}
 	},
@@ -417,10 +417,10 @@ var Select = React.createClass({
 			if(options && options.length && (_.isEmpty(input) ||  input === options[0].label)) {
 				return options[0];
 			} else {
-				return null;
+				return undefined;
 			}
 		} else {
-			return options ? options[0] : null;
+			return options ? options[0] : undefined;
 		}
 	},
 
@@ -589,72 +589,41 @@ var Select = React.createClass({
 			'has-value': this.state.value
 		});
 
-		var value = [];
-
-		if (this.props.multi) {
-			this.state.values.forEach(function(val) {
-				var props = _.extend({
-					key: val.value,
-					optionLabelClick: !!this.props.onOptionLabelClick,
-					onOptionLabelClick: this.handleOptionLabelClick.bind(this, val),
-					onRemove: this.removeValue.bind(this, val)
-				}, val);
-				value.push(<Value {...props} />);
-			}, this);
-		}
-
-		if (this.props.disabled || (!this.state.inputValue && (!this.props.multi || !value.length))) {
-			value.push(<div className="Select-placeholder" key="placeholder">{this.state.placeholder}</div>);
-		}
-
 		var loading = this.state.isLoading ? <span className="Select-loading" aria-hidden="true" /> : null;
 		var clear = this.props.clearable && this.state.value && !this.props.disabled ? <span className="Select-clear" title={this.props.multi ? this.props.clearAllText : this.props.clearValueText} aria-label={this.props.multi ? this.props.clearAllText : this.props.clearValueText} onMouseDown={this.clearValue} onClick={this.clearValue} dangerouslySetInnerHTML={{ __html: '&times;' }} /> : null;
 
-		var menu;
-		var menuProps;
-		if (this.state.isOpen) {
-			menuProps = {
-				ref: 'menu',
-				className: 'Select-menu'
-			};
-			if (this.props.multi) {
-				menuProps.onMouseDown = this.handleMouseDown;
-			}
-			menu = (
-				<div ref="selectMenuContainer" className="Select-menu-outer">
-					<div {...menuProps}>
-						<OptionList onChange={this.selectValue} onFocusChange={this.focusOption} options={this.state.filteredOptions} />
-					</div>
-				</div>
-			);
+		var menuProps = {};
+		if (this.props.multi) {
+			menuProps.onMouseDown = this.handleMouseDown;
 		}
 
-		var input;
 		var inputProps = _.extend({
 			ref: 'input',
-			className: 'Select-input',
+			className: 'select--input',
 			tabIndex: this.props.tabIndex || 0,
 			onFocus: this.handleInputFocus,
 			onBlur: this.handleInputBlur
 		}, this.props.inputProps);
-
-		if (this.props.searchable && !this.props.disabled) {
-			input = <Input value={this.state.inputValue} onChange={this.handleInputChange} minWidth="5" {...inputProps} />;
-		} else {
-			input = <div {...inputProps}>&nbsp;</div>;
-		}
-
+		console.log(this.state.inputValue);
 		return (
 			<div ref="wrapper" className={selectClass}>
 				<input type="hidden" ref="value" name={this.props.name} value={this.state.value} disabled={this.props.disabled} />
-				<div className="Select-control" ref="control" onKeyDown={this.handleKeyDown} onMouseDown={this.handleMouseDown} onTouchEnd={this.handleMouseDown}>
-					{value}
-					{input}
-					<span className="Select-arrow" />
-					{loading}
-					{clear}
-				</div>
-				{menu}
+
+				<Control className="select--control" ref="control" inputProps={inputProps} multi={this.props.multi}
+						 searchable={this.props.searchable} placeholder={this.state.placeholder} 
+						 inputValue={this.state.inputValue} disabled={this.props.disabled}
+						 values={this.state.values} onInputChange={this.handleInputChange} onKeyDown={this.handleKeyDown} 
+						 onMouseDown={this.handleMouseDown} onTouchEnd={this.handleMouseDown} />
+				{
+					this.state.isOpen ?
+						(
+							<div ref="selectMenuContainer" className="select--menu--outer">
+								<OptionList {...menuProps} ref="menu" onChange={this.selectValue} onFocusChange={this.focusOption}
+								   focusedOption={this.state.focusedOption} options={this.state.filteredOptions} />
+							</div>
+						) : 
+						null
+				}
 			</div>
 		);
 	}

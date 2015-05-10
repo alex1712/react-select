@@ -5,7 +5,7 @@
 
 // wrapper around the menu
 
-.Select-menu-outer {
+.select--menu--outer {
 	// Unfortunately, having both border-radius and allows scrolling using overflow defined on the same
 	// element forces the browser to repaint on scroll.  However, if these definitions are split into an 
 	// outer and an inner element, the browser is able to optimize the scrolling behavior and does not 
@@ -29,7 +29,7 @@
 
 // wrapper
 
-.Select-menu {
+.select--menu {
 	max-height: @select-menu-max-height - 2px;
 	overflow-y: auto;
 }
@@ -37,7 +37,7 @@
 
 // options
 
-.Select-option {
+.select--option {
 	box-sizing: border-box;
 	color: @select-option-color;
 	cursor: pointer;
@@ -48,7 +48,7 @@
 		.border-bottom-radius( @select-input-border-radius );
 	}
 	
-	&.is-focused {
+	&.select--option__is-focused {
 		background-color: @select-option-focused-bg;
 		color: @select-option-focused-color;
 	}
@@ -58,7 +58,7 @@
 
 // no results
 
-.Select-noresults, .Select-option.placeholder {
+.select--noresults, .select--option.placeholder {
 	box-sizing: border-box;
 	color: @select-noresults-color;
 	cursor: default;
