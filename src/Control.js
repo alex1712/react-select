@@ -13,10 +13,12 @@ var Control = React.createClass({
 		multi			: React.PropTypes.bool,
 		onRemoveValue   : React.PropTypes.func,
 		onClickValue    : React.PropTypes.func,
+		onClickClear    : React.PropTypes.func,
 		onKeyDown		: React.PropTypes.func.isRequired,
 		onMouseDown		: React.PropTypes.func.isRequired,
 		onTouchEnd		: React.PropTypes.func.isRequired,
-		onInputChange	: React.PropTypes.func.isRequired
+		onInputChange	: React.PropTypes.func.isRequired,
+		clearText 		: React.PropTypes.string
 	},
 
 	getDefaultProps: function() {
@@ -44,10 +46,25 @@ var Control = React.createClass({
 		
 		return value;
 	},
+
+	clearValue: function(ev) {
+		// if the event was triggered by a mousedown and not the primary
+		// button, ignore it.
+		if (event && event.type === 'mousedown' && event.button !== 0) {
+			return;
+		}
+		if (this.props.onClickClear) this.props.onClickClear(ev);	
+	},
 	
 	render: function() {
-
-
+		var loading = this.props.isLoading ? <span className="select--loading" aria-hidden="true" /> : null;
+		var clear = this.props.clearable && this.props.value && !this.props.disabled ? 
+			<span className="select--clear" 
+				  title={this.props.clearText} 
+				  aria-label={this.props.clearText} 
+				  onMouseDown={this.clearValue} onClick={this.clearValue} dangerouslySetInnerHTML={{ __html: '&times;' }} 
+				/> : 
+			null;
 		
 		return (
 			<div className={this.props.className} onKeyDown={this.props.onKeyDown} 
@@ -59,6 +76,8 @@ var Control = React.createClass({
 						<div {...this.props.inputProps}>{ this.props.inputValue ? this.props.inputValue : String.fromCharCode(160) }</div>
 				}
 				<span className="select--arrow" />
+				{loading}
+				{clear}
 			</div>
 		);
 	}

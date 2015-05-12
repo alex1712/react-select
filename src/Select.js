@@ -90,6 +90,7 @@ var Select = React.createClass({
 			 * - placeholder
 			 * - focusedOption
 			*/
+			actions: [],
 			options: this.props.options,
 			isFocused: false,
 			isOpen: false,
@@ -149,7 +150,7 @@ var Select = React.createClass({
 				filteredOptions: this.filterOptions(newProps.options)
 			});
 		}
-		if (newProps.value !== this.state.value) {
+		if (this.props.value !== newProps.value && newProps.value !== this.state.value) {
 			this.setState(this.getStateFromValue(newProps.value, newProps.options));
 		}
 	},
@@ -199,7 +200,7 @@ var Select = React.createClass({
 
 		var values = this.initValuesArray(value, options),
 			filteredOptions = this.filterOptions(options, values);
-
+		
 		return {
 			value: values.map(function(v) { return v.value; }).join(this.props.delimiter),
 			values: values,
@@ -253,12 +254,7 @@ var Select = React.createClass({
 		this.setValue(_.without(this.state.values, value));
 	},
 
-	clearValue: function(event) {
-		// if the event was triggered by a mousedown and not the primary
-		// button, ignore it.
-		if (event && event.type === 'mousedown' && event.button !== 0) {
-			return;
-		}
+	clearValue: function() {
 		this.setValue(null);
 	},
 
@@ -275,14 +271,6 @@ var Select = React.createClass({
 		if (newState.value !== this.state.value && this.props.onChange) {
 			this.props.onChange(newState.value, newState.values);
 		}
-	},
-	
-	getNewTagOption: function() {
-		return this.props.tagging ? {
-			label: this.props.taggingPlaceholder(this.state.inputValue),
-			value: null,
-			type: 'createTag'
-		} : null;
 	},
 
 	handleMouseDown: function(event) {
@@ -397,20 +385,18 @@ var Select = React.createClass({
 			}, this._bindCloseMenuIfClickedOutside);
 		} else {
 			var filteredOptions = this.filterOptions(this.state.options);
+			var currentActions = this.getActions();
 
 			this.setState({
 				isOpen: true,
 				inputValue: value,
 				filteredOptions: filteredOptions,
+				actions: currentActions,
 				focusedOption: this.getAutomaticFocusedOption(filteredOptions, value)
 			}, this._bindCloseMenuIfClickedOutside);
 		}
 	},
 
-	createAsNewTag: function() {
-		this.addValue(this.state.inputValue);
-	},
-	
 	getAutomaticFocusedOption: function(options, currentInput) {
 		var input = currentInput || this.state.inputValue;
 		if (this.props.tagging) {
@@ -503,6 +489,18 @@ var Select = React.createClass({
 		}
 	},
 
+	createAsNewTag: function() {
+		this.addValue(this.state.inputValue);
+	},
+	getActions: function() {
+		return this.props.tagging ? [{
+			getText: function() {
+				return this.props.taggingPlaceholder(this.state.inputValue);
+			}.bind(this),
+			run: this.createAsNewTag
+		}] : null;
+	},
+	
 	focusOption: function(op) {
 		this.setState({
 			focusedOption: op
@@ -589,9 +587,6 @@ var Select = React.createClass({
 			'has-value': this.state.value
 		});
 
-		var loading = this.state.isLoading ? <span className="Select-loading" aria-hidden="true" /> : null;
-		var clear = this.props.clearable && this.state.value && !this.props.disabled ? <span className="Select-clear" title={this.props.multi ? this.props.clearAllText : this.props.clearValueText} aria-label={this.props.multi ? this.props.clearAllText : this.props.clearValueText} onMouseDown={this.clearValue} onClick={this.clearValue} dangerouslySetInnerHTML={{ __html: '&times;' }} /> : null;
-
 		var menuProps = {};
 		if (this.props.multi) {
 			menuProps.onMouseDown = this.handleMouseDown;
@@ -604,22 +599,26 @@ var Select = React.createClass({
 			onFocus: this.handleInputFocus,
 			onBlur: this.handleInputBlur
 		}, this.props.inputProps);
-		console.log(this.state.inputValue);
 		return (
 			<div ref="wrapper" className={selectClass}>
-				<input type="hidden" ref="value" name={this.props.name} value={this.state.value} disabled={this.props.disabled} />
+				<input type="hidden" ref="value" name={this.props.name} value={this.state.value} />
 
 				<Control className="select--control" ref="control" inputProps={inputProps} multi={this.props.multi}
-						 searchable={this.props.searchable} placeholder={this.state.placeholder} 
+						 searchable={this.props.searchable} placeholder={this.state.placeholder}
+						 clearable={this.props.clearable} 
+						 clearText={this.props.multi ? this.props.clearAllText : this.props.clearValueText}
 						 inputValue={this.state.inputValue} disabled={this.props.disabled}
-						 values={this.state.values} onInputChange={this.handleInputChange} onKeyDown={this.handleKeyDown} 
+						 value={this.state.value} values={this.state.values}
+						 onClickClear={this.clearValue}
+						 onInputChange={this.handleInputChange} onKeyDown={this.handleKeyDown} 
 						 onMouseDown={this.handleMouseDown} onTouchEnd={this.handleMouseDown} />
 				{
 					this.state.isOpen ?
 						(
 							<div ref="selectMenuContainer" className="select--menu--outer">
 								<OptionList {...menuProps} ref="menu" onChange={this.selectValue} onFocusChange={this.focusOption}
-								   focusedOption={this.state.focusedOption} options={this.state.filteredOptions} />
+								   focusedOption={this.state.focusedOption} options={this.state.filteredOptions} 
+								   actions={this.state.actions} />
 							</div>
 						) : 
 						null

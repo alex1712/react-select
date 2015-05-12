@@ -96,6 +96,7 @@ var Select = React.createClass({
     * - placeholder
     * - focusedOption
    */
+			actions: [],
 			options: this.props.options,
 			isFocused: false,
 			isOpen: false,
@@ -155,7 +156,7 @@ var Select = React.createClass({
 				filteredOptions: this.filterOptions(newProps.options)
 			});
 		}
-		if (newProps.value !== this.state.value) {
+		if (this.props.value !== newProps.value && newProps.value !== this.state.value) {
 			this.setState(this.getStateFromValue(newProps.value, newProps.options));
 		}
 	},
@@ -261,12 +262,7 @@ var Select = React.createClass({
 		this.setValue(_.without(this.state.values, value));
 	},
 
-	clearValue: function clearValue(event) {
-		// if the event was triggered by a mousedown and not the primary
-		// button, ignore it.
-		if (event && event.type === 'mousedown' && event.button !== 0) {
-			return;
-		}
+	clearValue: function clearValue() {
 		this.setValue(null);
 	},
 
@@ -283,14 +279,6 @@ var Select = React.createClass({
 		if (newState.value !== this.state.value && this.props.onChange) {
 			this.props.onChange(newState.value, newState.values);
 		}
-	},
-
-	getNewTagOption: function getNewTagOption() {
-		return this.props.tagging ? {
-			label: this.props.taggingPlaceholder(this.state.inputValue),
-			value: null,
-			type: 'createTag'
-		} : null;
 	},
 
 	handleMouseDown: function handleMouseDown(event) {
@@ -411,18 +399,16 @@ var Select = React.createClass({
 			}, this._bindCloseMenuIfClickedOutside);
 		} else {
 			var filteredOptions = this.filterOptions(this.state.options);
+			var currentActions = this.getActions();
 
 			this.setState({
 				isOpen: true,
 				inputValue: value,
 				filteredOptions: filteredOptions,
+				actions: currentActions,
 				focusedOption: this.getAutomaticFocusedOption(filteredOptions, value)
 			}, this._bindCloseMenuIfClickedOutside);
 		}
-	},
-
-	createAsNewTag: function createAsNewTag() {
-		this.addValue(this.state.inputValue);
 	},
 
 	getAutomaticFocusedOption: function getAutomaticFocusedOption(options, currentInput) {
@@ -514,6 +500,18 @@ var Select = React.createClass({
 		}
 	},
 
+	createAsNewTag: function createAsNewTag() {
+		this.addValue(this.state.inputValue);
+	},
+	getActions: function getActions() {
+		return this.props.tagging ? [{
+			getText: (function () {
+				return this.props.taggingPlaceholder(this.state.inputValue);
+			}).bind(this),
+			run: this.createAsNewTag
+		}] : null;
+	},
+
 	focusOption: function focusOption(op) {
 		this.setState({
 			focusedOption: op
@@ -599,9 +597,6 @@ var Select = React.createClass({
 			'has-value': this.state.value
 		});
 
-		var loading = this.state.isLoading ? React.createElement('span', { className: 'Select-loading', 'aria-hidden': 'true' }) : null;
-		var clear = this.props.clearable && this.state.value && !this.props.disabled ? React.createElement('span', { className: 'Select-clear', title: this.props.multi ? this.props.clearAllText : this.props.clearValueText, 'aria-label': this.props.multi ? this.props.clearAllText : this.props.clearValueText, onMouseDown: this.clearValue, onClick: this.clearValue, dangerouslySetInnerHTML: { __html: '&times;' } }) : null;
-
 		var menuProps = {};
 		if (this.props.multi) {
 			menuProps.onMouseDown = this.handleMouseDown;
@@ -614,21 +609,25 @@ var Select = React.createClass({
 			onFocus: this.handleInputFocus,
 			onBlur: this.handleInputBlur
 		}, this.props.inputProps);
-		console.log(this.state.inputValue);
 		return React.createElement(
 			'div',
 			{ ref: 'wrapper', className: selectClass },
-			React.createElement('input', { type: 'hidden', ref: 'value', name: this.props.name, value: this.state.value, disabled: this.props.disabled }),
+			React.createElement('input', { type: 'hidden', ref: 'value', name: this.props.name, value: this.state.value }),
 			React.createElement(Control, { className: 'select--control', ref: 'control', inputProps: inputProps, multi: this.props.multi,
 				searchable: this.props.searchable, placeholder: this.state.placeholder,
+				clearable: this.props.clearable,
+				clearText: this.props.multi ? this.props.clearAllText : this.props.clearValueText,
 				inputValue: this.state.inputValue, disabled: this.props.disabled,
-				values: this.state.values, onInputChange: this.handleInputChange, onKeyDown: this.handleKeyDown,
+				value: this.state.value, values: this.state.values,
+				onClickClear: this.clearValue,
+				onInputChange: this.handleInputChange, onKeyDown: this.handleKeyDown,
 				onMouseDown: this.handleMouseDown, onTouchEnd: this.handleMouseDown }),
 			this.state.isOpen ? React.createElement(
 				'div',
 				{ ref: 'selectMenuContainer', className: 'select--menu--outer' },
 				React.createElement(OptionList, _extends({}, menuProps, { ref: 'menu', onChange: this.selectValue, onFocusChange: this.focusOption,
-					focusedOption: this.state.focusedOption, options: this.state.filteredOptions }))
+					focusedOption: this.state.focusedOption, options: this.state.filteredOptions,
+					actions: this.state.actions }))
 			) : null
 		);
 	}
@@ -638,7 +637,56 @@ var Select = React.createClass({
 module.exports = Select;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./Control":2,"./OptionList":4}],2:[function(require,module,exports){
+},{"./Control":3,"./OptionList":5}],2:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var React = (typeof window !== "undefined" ? window.React : typeof global !== "undefined" ? global.React : null),
+    classes = (typeof window !== "undefined" ? window.classNames : typeof global !== "undefined" ? global.classNames : null);
+
+var Action = React.createClass({
+	displayName: 'Action',
+
+	propTypes: {
+		action: React.PropTypes.object.isRequired,
+		onFocus: React.PropTypes.func.isRequired,
+		onSelected: React.PropTypes.func.isRequired,
+		hasFocus: React.PropTypes.bool
+	},
+
+	getDefaultProps: function getDefaultProps() {
+		return {
+			hasFocus: false
+		};
+	},
+
+	handleMouseEnter: function handleMouseEnter() {
+		this.props.onFocus(this.props.action);
+	},
+	handleMouseDown: function handleMouseDown() {
+		this.props.action.run();
+	},
+
+	render: function render() {
+		var classNames = classes({
+			'select--option': true,
+			'select--option__is-focused': this.props.hasFocus
+		});
+
+		return React.createElement(
+			'div',
+			{ className: classNames, key: 'action-' + this.props.action.value,
+				onMouseEnter: this.handleMouseEnter, onMouseDown: this.handleMouseDown, onClick: this.handleMouseDown },
+			this.props.action.getText()
+		);
+	}
+
+});
+
+module.exports = Action;
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],3:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -661,10 +709,12 @@ var Control = React.createClass({
 		multi: React.PropTypes.bool,
 		onRemoveValue: React.PropTypes.func,
 		onClickValue: React.PropTypes.func,
+		onClickClear: React.PropTypes.func,
 		onKeyDown: React.PropTypes.func.isRequired,
 		onMouseDown: React.PropTypes.func.isRequired,
 		onTouchEnd: React.PropTypes.func.isRequired,
-		onInputChange: React.PropTypes.func.isRequired
+		onInputChange: React.PropTypes.func.isRequired,
+		clearText: React.PropTypes.string
 	},
 
 	getDefaultProps: function getDefaultProps() {
@@ -696,7 +746,22 @@ var Control = React.createClass({
 		return value;
 	},
 
+	clearValue: function clearValue(ev) {
+		// if the event was triggered by a mousedown and not the primary
+		// button, ignore it.
+		if (event && event.type === 'mousedown' && event.button !== 0) {
+			return;
+		}
+		if (this.props.onClickClear) this.props.onClickClear(ev);
+	},
+
 	render: function render() {
+		var loading = this.props.isLoading ? React.createElement('span', { className: 'select--loading', 'aria-hidden': 'true' }) : null;
+		var clear = this.props.clearable && this.props.value && !this.props.disabled ? React.createElement('span', { className: 'select--clear',
+			title: this.props.clearText,
+			'aria-label': this.props.clearText,
+			onMouseDown: this.clearValue, onClick: this.clearValue, dangerouslySetInnerHTML: { __html: '&times;' }
+		}) : null;
 
 		return React.createElement(
 			'div',
@@ -708,7 +773,9 @@ var Control = React.createClass({
 				this.props.inputProps,
 				this.props.inputValue ? this.props.inputValue : String.fromCharCode(160)
 			),
-			React.createElement('span', { className: 'select--arrow' })
+			React.createElement('span', { className: 'select--arrow' }),
+			loading,
+			clear
 		);
 	}
 	//{loading}
@@ -719,7 +786,7 @@ var Control = React.createClass({
 module.exports = Control;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./Value":5}],3:[function(require,module,exports){
+},{"./Value":6}],4:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -768,62 +835,84 @@ var Option = React.createClass({
 module.exports = Option;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 (function (global){
 'use strict';
 
 var React = (typeof window !== "undefined" ? window.React : typeof global !== "undefined" ? global.React : null),
     classes = (typeof window !== "undefined" ? window.classNames : typeof global !== "undefined" ? global.classNames : null);
 
-var Option = require('./Option');
+var Option = require('./Option'),
+    Action = require('./Action');
 
 var OptionList = React.createClass({
-    displayName: 'OptionList',
+	displayName: 'OptionList',
 
-    propTypes: {
-        options: React.PropTypes.array.isRequired, // array of options
-        onFocusChange: React.PropTypes.func.isRequired,
-        onChange: React.PropTypes.func.isRequired,
-        focusedOption: React.PropTypes.object
-    },
+	propTypes: {
+		actions: React.PropTypes.array.isRequired, // array of actions
+		options: React.PropTypes.array.isRequired, // array of options
+		onFocusChange: React.PropTypes.func.isRequired,
+		onActionSelected: React.PropTypes.func,
+		onActionFocus: React.PropTypes.func,
+		onChange: React.PropTypes.func.isRequired,
+		focusedOption: React.PropTypes.object
+	},
 
-    getDefaultProps: function getDefaultProps() {
-        return {
-            focusedOption: {}
-        };
-    },
+	getDefaultProps: function getDefaultProps() {
+		return {
+			focusedOption: {},
+			onActionSelected: function onActionSelected() {}
+		};
+	},
 
-    renderOptions: function renderOptions() {
-        return this.props.options.map((function (op) {
-            var hasFocus = op.value === this.props.focusedOption.value;
-            var ref = hasFocus ? 'focused' : null;
-            return React.createElement(
-                Option,
-                { option: op, key: 'option-' + op.value, ref: ref, hasFocus: hasFocus,
-                    onFocus: this.props.onFocusChange, onSelected: this.props.onChange },
-                op.label
-            );
-        }).bind(this));
-    },
+	renderActions: function renderActions() {
+		return this.props.actions ? this.props.actions.map((function (action) {
+			var hasFocus = !this.props.focusedOption.value;
+			var ref = hasFocus ? 'focused' : null;
+			return React.createElement(Action, { action: action, key: 'action-' + action.value, ref: ref, hasFocus: hasFocus,
+				onFocus: this.props.onFocusChange, onSelected: this.props.onActionSelected });
+		}).bind(this)) : null;
+	},
 
-    render: function render() {
-        return this.props.options.length > 0 ? React.createElement(
-            'div',
-            { className: 'select--menu' },
-            this.renderOptions()
-        ) : React.createElement(
-            'div',
-            { className: 'select--menu__no-results' },
-            this.props.asyncOptions && !this.state.inputValue ? this.props.searchPromptText : this.props.noResultsText
-        );
-    }
+	renderOptions: function renderOptions() {
+		return this.props.options.map((function (op) {
+			var hasFocus = op.value === this.props.focusedOption.value;
+			var ref = hasFocus ? 'focused' : null;
+			return React.createElement(
+				Option,
+				{ option: op, key: 'option-' + op.value, ref: ref, hasFocus: hasFocus,
+					onFocus: this.props.onFocusChange, onSelected: this.props.onChange },
+				op.label
+			);
+		}).bind(this));
+	},
+
+	renderEmptyList: function renderEmptyList() {
+		return React.createElement(
+			'div',
+			{ className: 'select--menu__no-results' },
+			this.props.asyncOptions && !this.state.inputValue ? this.props.searchPromptText : this.props.noResultsText
+		);
+	},
+
+	render: function render() {
+		if (this.props.options.length === 0 && this.props.actions === 0) {
+			return this.renderEmptyList();
+		}
+		return React.createElement(
+			'div',
+			{ className: 'select--menu' },
+			this.renderActions(),
+			this.renderOptions()
+		);
+	}
 
 });
 
 module.exports = OptionList;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./Option":3}],5:[function(require,module,exports){
+},{"./Action":2,"./Option":4}],6:[function(require,module,exports){
 (function (global){
 'use strict';
 

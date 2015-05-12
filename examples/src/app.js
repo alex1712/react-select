@@ -161,6 +161,41 @@ var SelectedValuesField = React.createClass({
 	}
 });
 
+var DisableEnable = React.createClass({
+	getInitialState: function() {
+		return {
+			enabled: true			
+		};
+	},
+	toggle: function() {
+		console.log("aa");
+		this.setState({
+			enabled: !this.state.enabled
+		});
+	},
+	
+	render: function() {
+		var ops1 = [
+			{ label: 'Chocolate', value: 'chocolate' },
+			{ label: 'Vanilla', value: 'vanilla' },
+			{ label: 'Strawberry', value: 'strawberry' },
+			{ label: 'Caramel', value: 'caramel' },
+			{ label: 'Cookies and Cream', value: 'cookiescream' },
+			{ label: 'Peppermint', value: 'peppermint' }
+		];
+		var ops2 = STATES['US'];
+		return <div>
+			<label>{this.props.label}</label>
+			enable: <input type="checkbox" onChange={this.toggle}/>
+			<Select multi={true} disabled={!this.state.enabled} placeholder="Select your favourite(s)" options={ops1} 
+					onChange={logChange} tagging={true} />
+			<Select options={ops2} value={this.state.selectValue} disabled={!this.state.enabled}
+					onChange={this.updateValue} searchable={this.props.searchable} />
+			
+		</div>;
+	}
+});
+
 
 React.render(
 	<div>
@@ -169,6 +204,7 @@ React.render(
 		<MultiSelectField label="Multiselect (tagging):"/>
 		<SelectedValuesField label="Clickable labels (labels as links):" />
 		<RemoteSelectField label="Remote Options (tagging):"/>
+		<DisableEnable label="Multiselect (tagging): Disable/Enable switch:"/>
 	</div>,
 	document.getElementById('example')
 );
