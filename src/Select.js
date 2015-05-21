@@ -147,7 +147,7 @@ var Select = React.createClass({
 				filteredOptions: this.filterOptions(newProps.options)
 			});
 		}
-		if (newProps.value !== this.state.value) {
+		if (this.props.value !== newProps.value && newProps.value !== this.state.value) {
 			this.setState(this.getStateFromValue(newProps.value, newProps.options));
 		}
 	},
