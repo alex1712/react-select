@@ -130,10 +130,12 @@ var MultiSelectField = React.createClass({
 			{ label: 'Cookies and Cream', value: 'cookiescream' },
 			{ label: 'Peppermint', value: 'peppermint' }
 		];
-		return <div>
+		return (
+			<div>
 			<label>{this.props.label}</label>
-			<Select multi={true} placeholder="Select your favourite(s)" options={ops} onChange={logChange} tagging={true} />
-		</div>;
+				<Select multi={true} placeholder="Select your favourite(s)" options={ops} onChange={logChange} tagging={true}/>
+			</div>
+		);
 	}
 });
 

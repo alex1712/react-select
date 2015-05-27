@@ -103,37 +103,48 @@ var Select = React.createClass({
 	componentWillMount: function componentWillMount() {
 		this._optionsCache = {};
 		this._optionsFilterString = '';
-		this.setState(this.getStateFromValue(this.props.value));
 
-		if (this.props.asyncOptions && this.props.autoload) {
-			this.autoloadAsyncOptions();
-		}
-
-		this._closeMenuIfClickedOutside = (function (event) {
-			if (!this.state.isOpen) {
+		var self = this;
+		this._closeMenuIfClickedOutside = function (event) {
+			if (!self.state.isOpen) {
 				return;
 			}
-			var menuElem = this.refs.selectMenuContainer.getDOMNode();
-			var controlElem = this.refs.control.getDOMNode();
+			var menuElem = self.refs.selectMenuContainer.getDOMNode();
+			var controlElem = self.refs.control.getDOMNode();
 
-			var eventOccuredOutsideMenu = this.clickedOutsideElement(menuElem, event);
-			var eventOccuredOutsideControl = this.clickedOutsideElement(controlElem, event);
+			var eventOccuredOutsideMenu = self.clickedOutsideElement(menuElem, event);
+			var eventOccuredOutsideControl = self.clickedOutsideElement(controlElem, event);
 
 			// Hide dropdown menu if click occurred outside of menu
 			if (eventOccuredOutsideMenu && eventOccuredOutsideControl) {
-				this.setState({
+				self.setState({
 					isOpen: false
-				}, this._unbindCloseMenuIfClickedOutside);
+				}, self._unbindCloseMenuIfClickedOutside);
 			}
-		}).bind(this);
+		};
 
 		this._bindCloseMenuIfClickedOutside = function () {
-			document.addEventListener('click', this._closeMenuIfClickedOutside);
+			if (!document.addEventListener && document.attachEvent) {
+				document.attachEvent('onclick', this._closeMenuIfClickedOutside);
+			} else {
+				document.addEventListener('click', this._closeMenuIfClickedOutside);
+			}
 		};
 
 		this._unbindCloseMenuIfClickedOutside = function () {
-			document.removeEventListener('click', this._closeMenuIfClickedOutside);
+			if (!document.removeEventListener && document.detachEvent) {
+				document.detachEvent('onclick', this._closeMenuIfClickedOutside);
+			} else {
+				document.removeEventListener('click', this._closeMenuIfClickedOutside);
+			}
 		};
+
+		this.setState(this.getStateFromValue(this.props.value), function () {
+			//Executes after state change is done. Fixes issue #201
+			if (this.props.asyncOptions && this.props.autoload) {
+				this.autoloadAsyncOptions();
+			}
+		});
 	},
 
 	componentWillUnmount: function componentWillUnmount() {
@@ -408,6 +419,15 @@ var Select = React.createClass({
 				this.focusNextOption();
 				break;
 
+			case 188:
+				// ,
+				if (this.props.tagging) {
+					event.preventDefault();
+					event.stopPropagation();
+					this.createAsNewTag();
+				};
+				break;
+
 			default:
 				return;
 		}
@@ -459,7 +479,7 @@ var Select = React.createClass({
 	getAutomaticFocusedOption: function getAutomaticFocusedOption(options, currentInput) {
 		var input = currentInput || this.state.inputValue;
 		if (this.props.tagging) {
-			if (options && options.length && (_.isEmpty(input) || input === options[0].label)) {
+			if (options && options.length && (!input || input.length === 0 || input === options[0].label)) {
 				return options[0];
 			} else {
 				return null;
@@ -555,7 +575,7 @@ var Select = React.createClass({
 
 	selectFocusedOption: function selectFocusedOption() {
 		if (!this.state.isOpen) return;
-		if (this.props.tagging && !this.state.focusedOption && !_.isEmpty(this.state.inputValue)) {
+		if (this.props.tagging && !this.state.focusedOption && this.state.inputValue && this.state.inputValue.length > 0) {
 			return this.createAsNewTag();
 		} else {
 			return this.selectValue(this.state.focusedOption);
