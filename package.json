@@ -1,6 +1,6 @@
 {
-  "name": "react-select",
-  "version": "0.4.10",
+  "name": "mnq-react-select",
+  "version": "0.0.1",
   "description": "A Select control built with and for ReactJS",
   "main": "lib/Select.js",
   "author": "Jed Watson",
