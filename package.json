@@ -1,9 +1,9 @@
 {
   "name": "mnq-react-select",
-  "version": "0.0.1",
+  "version": "0.0.13",
   "description": "A Select control built with and for ReactJS",
   "main": "lib/Select.js",
-  "author": "Jed Watson",
+  "author": "alex",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -26,11 +26,6 @@
   },
   "peerDependencies": {
     "react": ">=0.12.0"
-  },
-  "browserify": {
-    "transform": [
-      "lessify"
-    ]
   },
   "browserify-shim": {
     "classnames": "global:classNames",

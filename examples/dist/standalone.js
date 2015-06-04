@@ -117,9 +117,7 @@ var Select = React.createClass({
 
 			// Hide dropdown menu if click occurred outside of menu
 			if (eventOccuredOutsideMenu && eventOccuredOutsideControl) {
-				self.setState({
-					isOpen: false
-				}, self._unbindCloseMenuIfClickedOutside);
+				self.close();
 			}
 		};
 
@@ -145,6 +143,12 @@ var Select = React.createClass({
 				this.autoloadAsyncOptions();
 			}
 		});
+	},
+
+	close: function close() {
+		this.setState({
+			isOpen: false
+		}, this._unbindCloseMenuIfClickedOutside);
 	},
 
 	componentWillUnmount: function componentWillUnmount() {
@@ -387,7 +391,10 @@ var Select = React.createClass({
 
 			case 9:
 				// tab
-				if (event.shiftKey || !this.state.isOpen || !this.state.focusedOption) {
+				if (!this.state.focusedOption && this.state.isOpen) {
+					this.close();
+					return;
+				} else if (!this.state.isOpen) {
 					return;
 				}
 				this.selectFocusedOption();

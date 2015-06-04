@@ -1,8 +1,8 @@
 {
-  "name": "react-select",
+  "name": "mnq-react-select",
   "main": "dist/react-select.min.js",
-  "version": "0.4.5",
-  "homepage": "https://github.com/JedWatson/react-select",
+  "version": "0.0.13",
+  "homepage": "https://github.com/alex1712/react-select",
   "authors": [
     "Jed Watson"
   ],
