@@ -682,7 +682,7 @@ var Select = React.createClass({
 		var taggingOption = this.getNewTagOption();
 		var isTagAlreadyAnOption = this.state.filteredOptions.some(op => op.value === this.state.inputValue);
 		
-		if(taggingOption && !isTagAlreadyAnOption && !this.state.inputValue.length > 0) {
+		if(taggingOption && !isTagAlreadyAnOption && this.state.inputValue.length > 0) {
 			var optionClass = classes({
 				'Select-option': true,
 				'placeholder': true,
