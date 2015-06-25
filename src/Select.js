@@ -431,14 +431,14 @@ var Select = React.createClass({
 
 	// Ensures that the currently focused option is available in filteredOptions.
 	// If not, returns the first available option.
-	_getNewFocusedOption: function(filteredOptions) {
-		for (var key in filteredOptions) {
-			if (filteredOptions.hasOwnProperty(key) && filteredOptions[key] === this.state.focusedOption) {
-				return filteredOptions[key];
-			}
-		}
-		return filteredOptions[0];
-	},
+	//_getNewFocusedOption: function(filteredOptions) {
+	//	for (var key in filteredOptions) {
+	//		if (filteredOptions.hasOwnProperty(key) && filteredOptions[key] === this.state.focusedOption) {
+	//			return filteredOptions[key];
+	//		}
+	//	}
+	//	return filteredOptions[0];
+	//},
 
 	handleInputChange: function(event) {
 		// assign an internal variable because we need to use
@@ -503,7 +503,7 @@ var Select = React.createClass({
 				var newState = {
 					options: options,
 					filteredOptions: filteredOptions,
-					focusedOption: this._getNewFocusedOption(filteredOptions)
+					focusedOption: this.getAutomaticFocusedOption(filteredOptions)
 				};
 				for (var key in state) {
 					if (state.hasOwnProperty(key)) {
@@ -531,7 +531,7 @@ var Select = React.createClass({
 			var newState = {
 				options: data.options,
 				filteredOptions: filteredOptions,
-				focusedOption: self._getNewFocusedOption(filteredOptions)
+				focusedOption: self.getAutomaticFocusedOption(filteredOptions)
 			};
 			for (var key in state) {
 				if (state.hasOwnProperty(key)) {
