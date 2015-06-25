@@ -170,9 +170,7 @@ var Select = React.createClass({
 
 			// Hide dropdown menu if click occurred outside of menu
 			if (eventOccuredOutsideMenu && eventOccuredOutsideControl) {
-				self.setState({
-					isOpen: false
-				}, self._unbindCloseMenuIfClickedOutside);
+				self.close();
 			}
 		};
 
@@ -198,6 +196,12 @@ var Select = React.createClass({
 				this.autoloadAsyncOptions();
 			}
 		});
+	},
+
+	close: function close() {
+		this.setState({
+			isOpen: false
+		}, this._unbindCloseMenuIfClickedOutside);
 	},
 
 	componentWillUnmount: function componentWillUnmount() {
@@ -440,7 +444,10 @@ var Select = React.createClass({
 
 			case 9:
 				// tab
-				if (event.shiftKey || !this.state.isOpen || !this.state.focusedOption) {
+				if (!this.state.focusedOption && this.state.isOpen) {
+					this.close();
+					return;
+				} else if (!this.state.isOpen) {
 					return;
 				}
 				this.selectFocusedOption();
@@ -490,14 +497,14 @@ var Select = React.createClass({
 
 	// Ensures that the currently focused option is available in filteredOptions.
 	// If not, returns the first available option.
-	_getNewFocusedOption: function _getNewFocusedOption(filteredOptions) {
-		for (var key in filteredOptions) {
-			if (filteredOptions.hasOwnProperty(key) && filteredOptions[key] === this.state.focusedOption) {
-				return filteredOptions[key];
-			}
-		}
-		return filteredOptions[0];
-	},
+	//_getNewFocusedOption: function(filteredOptions) {
+	//	for (var key in filteredOptions) {
+	//		if (filteredOptions.hasOwnProperty(key) && filteredOptions[key] === this.state.focusedOption) {
+	//			return filteredOptions[key];
+	//		}
+	//	}
+	//	return filteredOptions[0];
+	//},
 
 	handleInputChange: function handleInputChange(event) {
 		// assign an internal variable because we need to use
@@ -562,7 +569,7 @@ var Select = React.createClass({
 				var newState = {
 					options: options,
 					filteredOptions: filteredOptions,
-					focusedOption: this._getNewFocusedOption(filteredOptions)
+					focusedOption: this.getAutomaticFocusedOption(filteredOptions)
 				};
 				for (var key in state) {
 					if (state.hasOwnProperty(key)) {
@@ -590,7 +597,7 @@ var Select = React.createClass({
 			var newState = {
 				options: data.options,
 				filteredOptions: filteredOptions,
-				focusedOption: self._getNewFocusedOption(filteredOptions)
+				focusedOption: self.getAutomaticFocusedOption(filteredOptions)
 			};
 			for (var key in state) {
 				if (state.hasOwnProperty(key)) {
@@ -746,7 +753,7 @@ var Select = React.createClass({
 			return op.value === _this.state.inputValue;
 		});
 
-		if (taggingOption && !isTagAlreadyAnOption && !this.state.inputValue.length > 0) {
+		if (taggingOption && !isTagAlreadyAnOption && this.state.inputValue.length > 0) {
 			var optionClass = classes({
 				'Select-option': true,
 				'placeholder': true,
